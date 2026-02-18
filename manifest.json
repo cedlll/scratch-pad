@@ -14,8 +14,8 @@
   "commands": {
     "open-scratchpad": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Period",
-        "mac": "Command+Shift+Period"
+        "default": "Ctrl+Period",
+        "mac": "Command+Period"
       },
       "description": "Open scratchly"
     }

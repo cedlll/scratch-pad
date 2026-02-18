@@ -1,13 +1,14 @@
 "use strict";
 
-// Click extension icon → open scratchly in a new tab
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: "newtab.html" });
-});
+// Click extension icon → toggle side panel
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
-// Keyboard shortcut → open scratchly in a new tab
-chrome.commands.onCommand.addListener((command) => {
+// Keyboard shortcut → open side panel
+chrome.commands.onCommand.addListener(async (command) => {
   if (command === "open-scratchpad") {
-    chrome.tabs.create({ url: "newtab.html" });
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      chrome.sidePanel.open({ tabId: tab.id });
+    }
   }
 });
