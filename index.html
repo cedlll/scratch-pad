@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>scratchly — Simply write notes and export as .md</title>
+  <meta name="description" content="Simply write notes and export as .md. No sign-up, no cloud — everything stays in your browser.">
+  <meta name="theme-color" content="#1a1a1a">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="scratchly">
+  <meta property="og:description" content="Simply write notes and export as .md. No sign-up required.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/icons/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="scratchly">
+  <meta name="twitter:description" content="Simply write notes and export as .md.">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon48.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon128.png">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="newtab.css">
+  <script>
+    if (localStorage.getItem("scratchpad_theme") === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  </script>
+</head>
+<body>
+  <main>
+    <div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="scratchly" data-placeholder="Start writing or &quot;/&quot; for commands"></div>
+  </main>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script>
+    // localStorage fallback when running outside Chrome extension context
+    if (typeof chrome === "undefined" || !chrome.storage) {
+      const store = JSON.parse(localStorage.getItem("_sp") || "{}");
+      const persist = () => localStorage.setItem("_sp", JSON.stringify(store));
+      window.chrome = window.chrome || {};
+      chrome.storage = { local: {
+        get(keys, cb) {
+          const result = {};
+          for (const k of (Array.isArray(keys) ? keys : [keys])) {
+            if (k in store) result[k] = store[k];
+          }
+          cb(result);
+        },
+        set(items, cb) { Object.assign(store, items); persist(); if (cb) cb(); },
+      }};
+    }
+  </script>
+  <script src="newtab.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

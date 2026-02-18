@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>scratchly</title>
+  <link rel="stylesheet" href="newtab.css">
+  <script>
+    // Apply saved theme before paint to prevent dark→light flash
+    if (localStorage.getItem("scratchpad_theme") === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  </script>
+</head>
+<body>
+  <main>
+    <div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="scratchly" data-placeholder="Start writing or &quot;/&quot; for commands"></div>
+  </main>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script>
+    // localStorage fallback when running outside Chrome extension context
+    if (typeof chrome === "undefined" || !chrome.storage) {
+      const store = JSON.parse(localStorage.getItem("_sp") || "{}");
+      const persist = () => localStorage.setItem("_sp", JSON.stringify(store));
+      window.chrome = window.chrome || {};
+      chrome.storage = { local: {
+        get(keys, cb) {
+          const result = {};
+          for (const k of (Array.isArray(keys) ? keys : [keys])) {
+            if (k in store) result[k] = store[k];
+          }
+          cb(result);
+        },
+        set(items, cb) { Object.assign(store, items); persist(); if (cb) cb(); },
+      }};
+    }
+  </script>
+  <script src="newtab.js"></script>
+</body>
+</html>
