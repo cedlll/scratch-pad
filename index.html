@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>scratchly — Simply write notes and export as .md</title>
-  <meta name="description" content="Simply write notes and export as .md. No sign-up, no cloud — everything stays in your browser.">
+  <meta name="description" content="A minimal scratchpad that lives in your browser. No sign-up, no cloud — just write and export as markdown.">
   <meta name="theme-color" content="#1a1a1a">
 
   <!-- Open Graph -->
   <meta property="og:title" content="scratchly">
-  <meta property="og:description" content="Simply write notes and export as .md. No sign-up required.">
+  <meta property="og:description" content="Simply write notes and export as .md. No sign-up, no cloud.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://scratchly.xyz">
   <meta property="og:image" content="/icons/og-image.png">
 
   <!-- Twitter Card -->
@@ -18,51 +19,209 @@
   <meta name="twitter:title" content="scratchly">
   <meta name="twitter:description" content="Simply write notes and export as .md.">
 
-  <!-- PWA -->
-  <link rel="manifest" href="/site.webmanifest">
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon48.png">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
   <link rel="apple-touch-icon" href="/icons/icon128.png">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="newtab.css">
-  <script>
-    if (localStorage.getItem("scratchpad_theme") === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
+  <style>
+    @font-face {
+      font-family: "DM Sans";
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url("fonts/dm-sans-latin.woff2") format("woff2");
     }
-  </script>
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      background: #1a1a1a;
+      color: #e4e4e4;
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: inherit; }
+
+    /* ── Hero ─────────────────────────────────── */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px 64px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #888;
+      border: 1px solid #333;
+      border-radius: 100px;
+      padding: 6px 16px;
+      margin-bottom: 32px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 720px;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: #888;
+      max-width: 480px;
+      margin-bottom: 40px;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: #e4e4e4;
+      color: #1a1a1a;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #e4e4e4;
+      border: 1px solid #333;
+    }
+
+    /* ── Features ─────────────────────────────── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: #333;
+      border-top: 1px solid #333;
+      border-bottom: 1px solid #333;
+    }
+
+    .feature {
+      background: #1a1a1a;
+      padding: 40px 32px;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .feature h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature p {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #555;
+    }
+
+    footer a {
+      color: #888;
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="scratchly" data-placeholder="Start writing or &quot;/&quot; for commands"></div>
-  </main>
+  <section class="hero">
+    <span class="hero-badge">Free &amp; open source</span>
+    <h1>Simply write notes.<br>Export as .md</h1>
+    <p>A minimal scratchpad that lives in your browser. No sign-up, no cloud — everything stays on your device.</p>
+    <div class="cta-group">
+      <a href="/app" class="btn btn-primary">Start writing</a>
+      <a href="https://chromewebstore.google.com" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+        Chrome extension
+      </a>
+    </div>
+  </section>
 
-  <!-- Toast notification -->
-  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <section class="features">
+    <div class="feature">
+      <div class="feature-icon">/ _</div>
+      <h3>Slash commands</h3>
+      <p>Type / to access headings, lists, todos, quotes, dividers, and more.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">.md</div>
+      <h3>Markdown export</h3>
+      <p>Export your notes as clean .md files with a single command.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#9676;</div>
+      <h3>Offline-first</h3>
+      <p>Works without internet. Your data is stored locally and never leaves your device.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#9881;</div>
+      <h3>Side panel</h3>
+      <p>Open as a Chrome side panel with a keyboard shortcut. Always within reach.</p>
+    </div>
+  </section>
 
-  <script>
-    // localStorage fallback when running outside Chrome extension context
-    if (typeof chrome === "undefined" || !chrome.storage) {
-      const store = JSON.parse(localStorage.getItem("_sp") || "{}");
-      const persist = () => localStorage.setItem("_sp", JSON.stringify(store));
-      window.chrome = window.chrome || {};
-      chrome.storage = { local: {
-        get(keys, cb) {
-          const result = {};
-          for (const k of (Array.isArray(keys) ? keys : [keys])) {
-            if (k in store) result[k] = store[k];
-          }
-          cb(result);
-        },
-        set(items, cb) { Object.assign(store, items); persist(); if (cb) cb(); },
-      }};
-    }
-  </script>
-  <script src="newtab.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
-  </script>
+  <footer>
+    <nav class="footer-links">
+      <a href="/privacy-policy.html">Privacy</a>
+      <a href="https://github.com/cedlll/scratch-pad">GitHub</a>
+    </nav>
+    <p>scratchly</p>
+  </footer>
 </body>
 </html>
