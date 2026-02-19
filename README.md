@@ -14,7 +14,6 @@ A minimal scratchpad that lives in your browser. No sign-up, no cloud — everyt
 - **Paste as plain text** — URLs are automatically converted to clickable links
 - **Offline-first** — service worker caches assets for offline use
 - **Installable PWA** — add to your home screen from the web app
-- **Side panel** — use as a persistent sidebar alongside any Chrome tab
 - **Privacy-focused** — zero analytics, zero network requests, all data stays local
 - **Zero dependencies** — plain HTML/CSS/JS, loads instantly
 
@@ -31,8 +30,8 @@ Or load unpacked for development:
 
 ### Opening scratchly
 
-- **Click the extension icon** to open in the side panel
-- **Ctrl+.** (Cmd+. on Mac) to open the side panel via keyboard
+- **Click the extension icon** to open in a new tab
+- **Ctrl+.** (Cmd+. on Mac) to open in a new tab via keyboard
 
 ## Web App
 
@@ -84,7 +83,7 @@ To connect a custom domain, run `npx vercel domains add yourdomain.com` or confi
 ```
 ├── index.html          Landing page (scratchly.xyz)
 ├── app.html            Web app entry point (/app)
-├── newtab.html         Extension editor (side panel / new tab)
+├── newtab.html         Extension editor (new tab)
 ├── newtab.css          Editor styles (dark & light themes)
 ├── newtab.js           Editor logic (slash commands, todos, import/export)
 ├── background.js       Extension service worker
