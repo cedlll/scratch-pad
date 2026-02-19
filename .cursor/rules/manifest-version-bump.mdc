@@ -1,0 +1,13 @@
+---
+description: Reminder to bump Chrome extension manifest version before upload
+globs: manifest.json
+alwaysApply: false
+---
+
+# Bump manifest.json version on every change
+
+When modifying `manifest.json`, **always increment the `version` field**.
+
+The Chrome Web Store rejects uploads where the version is not strictly greater than the currently published version. Forgetting to bump causes: "Invalid version number in manifest" upload errors.
+
+Use semantic patch bumps (e.g. `1.1.1` → `1.1.2`) unless the change warrants a minor/major bump.
