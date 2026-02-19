@@ -324,6 +324,36 @@ main {
   color: var(--text-faint);
 }
 
+.slash-separator {
+  height: 1px;
+  background: var(--menu-border);
+  margin: 4px 8px;
+}
+
+/* ── Drop overlay ────────────────────────────────────── */
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .drop-overlay {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.drop-overlay-label {
+  font-size: 17px;
+  color: var(--text);
+  padding: 32px 48px;
+  border: 2px dashed var(--border-light);
+  border-radius: 16px;
+  background: var(--bg-surface);
+}
+
 /* ── Toast ────────────────────────────────────────────── */
 .toast {
   position: fixed;

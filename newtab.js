@@ -393,17 +393,18 @@
     const themeLabel = currentTheme === "dark" ? "Light mode" : "Dark mode";
     const themeIcon = currentTheme === "dark" ? "☀" : "☾";
     return [
-      { icon: themeIcon, label: themeLabel,      hint: "",    action: "theme" },
-      { icon: "↓",  label: "Download .md",  hint: "",    action: "export" },
-      { icon: "T",  label: "Text",          hint: "",    action: "text" },
-      { icon: "H1", label: "Heading 1",     hint: "#",   action: "h1" },
-      { icon: "H2", label: "Heading 2",     hint: "##",  action: "h2" },
-      { icon: "H3", label: "Heading 3",     hint: "###", action: "h3" },
-      { icon: "•",  label: "Bulleted list", hint: "-",   action: "ul" },
-      { icon: "1.",  label: "Numbered list", hint: "1.",  action: "ol" },
-      { icon: "☐",  label: "To-do list",    hint: "[]",  action: "todo" },
-      { icon: "❝",  label: "Quote",         hint: "",    action: "quote" },
-      { icon: "—",  label: "Divider",       hint: "---", action: "divider" },
+      { icon: themeIcon, label: themeLabel,     hint: "",    action: "theme",   group: "theme" },
+      { icon: "⤒",  label: "Open .md",     hint: "",    action: "upload",  group: "file" },
+      { icon: "⤓",  label: "Save as .md",  hint: "",    action: "export",  group: "file" },
+      { icon: "T",  label: "Text",         hint: "",    action: "text",    group: "blocks" },
+      { icon: "H1", label: "Heading 1",    hint: "#",   action: "h1",      group: "blocks" },
+      { icon: "H2", label: "Heading 2",    hint: "##",  action: "h2",      group: "blocks" },
+      { icon: "H3", label: "Heading 3",    hint: "###", action: "h3",      group: "blocks" },
+      { icon: "•",  label: "Bulleted list",hint: "-",   action: "ul",      group: "blocks" },
+      { icon: "1.", label: "Numbered list", hint: "1.",  action: "ol",      group: "blocks" },
+      { icon: "☐",  label: "To-do list",   hint: "[]",  action: "todo",    group: "blocks" },
+      { icon: "❝",  label: "Quote",        hint: "",    action: "quote",   group: "blocks" },
+      { icon: "—",  label: "Divider",      hint: "---", action: "divider", group: "blocks" },
     ];
   }
 
@@ -434,13 +435,20 @@
 
     activeIndex = Math.min(activeIndex, commands.length - 1);
 
-    menuEl.innerHTML = commands.map((cmd, i) =>
-      `<div class="slash-item${i === activeIndex ? " active" : ""}" data-index="${i}" role="option" id="slash-opt-${i}" aria-selected="${i === activeIndex}">
+    let html = "";
+    let lastGroup = null;
+    commands.forEach((cmd, i) => {
+      if (lastGroup && cmd.group && cmd.group !== lastGroup) {
+        html += '<div class="slash-separator"></div>';
+      }
+      lastGroup = cmd.group || lastGroup;
+      html += `<div class="slash-item${i === activeIndex ? " active" : ""}" data-index="${i}" role="option" id="slash-opt-${i}" aria-selected="${i === activeIndex}">
         <div class="slash-icon">${cmd.icon}</div>
         <div class="slash-label">${cmd.label}</div>
         ${cmd.hint ? `<div class="slash-hint">${cmd.hint}</div>` : ""}
-      </div>`
-    ).join("");
+      </div>`;
+    });
+    menuEl.innerHTML = html;
 
     editor.setAttribute("aria-activedescendant", `slash-opt-${activeIndex}`);
 
@@ -634,6 +642,9 @@
       case "export":
         exportMarkdown();
         break;
+      case "upload":
+        uploadMarkdown();
+        break;
       case "theme":
         toggleTheme();
         break;
@@ -664,6 +675,170 @@
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
+
+  // ── Upload / Import .md ──────────────────────────────
+  function uploadMarkdown() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".md,.markdown,text/markdown";
+    input.onchange = () => {
+      if (input.files[0]) loadMarkdownFile(input.files[0]);
+    };
+    input.click();
+  }
+
+  function loadMarkdownFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const md = e.target.result;
+      if (editor.textContent.trim() && !confirm("Replace current content with " + file.name + "?")) {
+        return;
+      }
+      editor.innerHTML = parseMarkdownToHTML(md);
+      migrateTodoItems();
+      normalizeEmptyEditor();
+      updatePlaceholder();
+      scheduleSave();
+      showToast("Loaded " + file.name);
+    };
+    reader.onerror = () => showToast("Failed to read file", true);
+    reader.readAsText(file);
+  }
+
+  function escapeHtml(text) {
+    const el = document.createElement("span");
+    el.textContent = text;
+    return el.innerHTML;
+  }
+
+  function parseMarkdownToHTML(md) {
+    const lines = md.split("\n");
+    const parts = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+        parts.push("<hr>");
+        i++;
+        continue;
+      }
+
+      const h3 = line.match(/^### (.+)/);
+      if (h3) { parts.push(`<h3>${escapeHtml(h3[1])}</h3>`); i++; continue; }
+      const h2 = line.match(/^## (.+)/);
+      if (h2) { parts.push(`<h2>${escapeHtml(h2[1])}</h2>`); i++; continue; }
+      const h1 = line.match(/^# (.+)/);
+      if (h1) { parts.push(`<h1>${escapeHtml(h1[1])}</h1>`); i++; continue; }
+
+      const todo = line.match(/^[-*+] \[([ xX])\] (.*)/);
+      if (todo) {
+        const checked = todo[1] !== " ";
+        const text = todo[2] || "\u00A0";
+        parts.push(
+          `<div class="todo-item${checked ? " checked" : ""}">` +
+          `<input type="checkbox"${checked ? " checked" : ""} contenteditable="false" aria-label="Mark task complete">` +
+          `<span class="todo-text">${escapeHtml(text) || "\u00A0"}</span></div>`
+        );
+        i++;
+        continue;
+      }
+
+      if (/^[-*+] /.test(line)) {
+        const items = [];
+        while (i < lines.length && /^[-*+] /.test(lines[i])) {
+          items.push(lines[i].replace(/^[-*+] /, ""));
+          i++;
+        }
+        parts.push("<ul>" + items.map(t => `<li>${escapeHtml(t)}</li>`).join("") + "</ul>");
+        continue;
+      }
+
+      if (/^\d+[.)] /.test(line)) {
+        const items = [];
+        while (i < lines.length && /^\d+[.)] /.test(lines[i])) {
+          items.push(lines[i].replace(/^\d+[.)] /, ""));
+          i++;
+        }
+        parts.push("<ol>" + items.map(t => `<li>${escapeHtml(t)}</li>`).join("") + "</ol>");
+        continue;
+      }
+
+      if (/^>/.test(line)) {
+        const qLines = [];
+        while (i < lines.length && /^>/.test(lines[i])) {
+          qLines.push(lines[i].replace(/^> ?/, ""));
+          i++;
+        }
+        parts.push(`<blockquote>${qLines.map(l => escapeHtml(l)).join("<br>")}</blockquote>`);
+        continue;
+      }
+
+      if (!line.trim()) {
+        parts.push("<div><br></div>");
+        i++;
+        continue;
+      }
+
+      parts.push(`<div>${escapeHtml(line)}</div>`);
+      i++;
+    }
+
+    return parts.join("") || "<br>";
+  }
+
+  // ── Drag & Drop .md files ──────────────────────────
+  let dragCounter = 0;
+  let dropOverlay = null;
+
+  function showDropOverlay() {
+    if (dropOverlay) return;
+    dropOverlay = document.createElement("div");
+    dropOverlay.className = "drop-overlay";
+    dropOverlay.innerHTML = '<div class="drop-overlay-label">Drop .md file to open</div>';
+    document.body.appendChild(dropOverlay);
+  }
+
+  function hideDropOverlay() {
+    if (!dropOverlay) return;
+    dropOverlay.remove();
+    dropOverlay = null;
+  }
+
+  document.addEventListener("dragenter", (e) => {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    dragCounter++;
+    if (dragCounter === 1) showDropOverlay();
+  });
+
+  document.addEventListener("dragleave", () => {
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      hideDropOverlay();
+    }
+  });
+
+  document.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  });
+
+  document.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    hideDropOverlay();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (!/\.(md|markdown)$/i.test(file.name)) {
+      showToast("Only .md files are supported", true);
+      return;
+    }
+    loadMarkdownFile(file);
+  });
 
   // ── Toast ────────────────────────────────────────────
   const toastEl = document.getElementById("toast");

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>scratchly — Simply write notes and export as .md</title>
-  <meta name="description" content="A minimal scratchpad that lives in your browser. No sign-up, no cloud — just write and export as markdown.">
+  <title>scratchly — Simply write notes. Import & export as .md</title>
+  <meta name="description" content="A minimal scratchpad that lives in your browser. No sign-up, no cloud — import and export markdown files.">
   <meta name="theme-color" content="#1a1a1a">
 
   <!-- Open Graph -->
   <meta property="og:title" content="scratchly">
-  <meta property="og:description" content="Simply write notes and export as .md. No sign-up, no cloud.">
+  <meta property="og:description" content="Simply write notes. Import & export .md files. No sign-up, no cloud.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://scratchly.xyz">
   <meta property="og:image" content="/icons/og-image.png">
@@ -17,7 +17,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="scratchly">
-  <meta name="twitter:description" content="Simply write notes and export as .md.">
+  <meta name="twitter:description" content="Simply write notes. Import & export .md files.">
 
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/icon48.png">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
@@ -136,6 +136,7 @@
 
     @media (max-width: 900px) {
       .features { grid-template-columns: repeat(2, 1fr); }
+      .feature:last-child:nth-child(odd) { grid-column: 1 / -1; }
     }
 
     @media (max-width: 480px) {
@@ -191,7 +192,7 @@
 <main>
   <section class="hero">
     <span class="hero-badge">Free &amp; open source</span>
-    <h1>Simply write notes.<br>Export as .md</h1>
+    <h1>Simply write notes.<br>Import &amp; export .md</h1>
     <p>A minimal scratchpad that lives in your browser. No sign-up, no cloud — everything stays on your device.</p>
     <div class="cta-group">
       <a href="/app" class="btn btn-primary">Start writing</a>
@@ -210,8 +211,8 @@
     </div>
     <div class="feature">
       <div class="feature-icon">.md</div>
-      <h2>Markdown export</h2>
-      <p>Export your notes as clean .md files with a single command.</p>
+      <h2>Markdown import &amp; export</h2>
+      <p>Upload existing .md files or export your notes — all with a single command.</p>
     </div>
     <div class="feature">
       <div class="feature-icon">&#9676;</div>
