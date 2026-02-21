@@ -3,7 +3,7 @@
 
   // Import utilities
   const { sanitizeHTML, sanitizeMarkdown } = await import('./src/core/sanitize.js');
-  const { STORAGE, TIMING } = await import('./src/config/constants.js');
+  const { STORAGE, TIMING, MENU } = await import('./src/config/constants.js');
   const { parseMarkdownToHTML } = await import('./src/utils/markdown.js');
   const { debounce } = await import('./src/utils/debounce.js');
 
