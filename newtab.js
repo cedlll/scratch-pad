@@ -346,6 +346,15 @@
     if (checkbox) return;
     const text = item.querySelector(".todo-text");
     if (!text) return;
+
+    // FIX: Only override cursor position if clicking OUTSIDE the text span
+    // If clicking directly on text, allow natural cursor placement
+    if (text.contains(e.target)) {
+      // User clicked directly on the text - let browser handle cursor position naturally
+      return;
+    }
+
+    // User clicked on todo-item container but not on text - place cursor at end
     e.preventDefault();
     editor.focus();
     const sel = window.getSelection();
