@@ -4,18 +4,45 @@ A minimal scratchpad that lives in your browser. No sign-up, no cloud — everyt
 
 **Web app:** [scratchly.xyz](https://scratchly.xyz) · **Chrome extension:** [Chrome Web Store](https://chromewebstore.google.com/detail/pmjpljdhpohhlhekfkjlddaafhfodbdg)
 
+## What's New in v1.2.0
+
+🔒 **Security Enhancements:**
+- Added DOMPurify for XSS protection on all HTML content
+- Fixed XSS vulnerabilities in content restoration and markdown imports
+- Improved service worker error handling
+
+✨ **Enhanced Markdown Support:**
+- **Bold** text: `**text**` or `__text__`
+- *Italic* text: `*text*` or `_text_`
+- `Inline code`: `` `code` ``
+- [Links](url): `[text](url)`
+- Code blocks with syntax highlighting: ` ```language `
+
+🐛 **Bug Fixes:**
+- Fixed slash command triggering on URLs (e.g., `http://`)
+- Fixed service worker offline caching (added missing assets)
+- Removed unnecessary setTimeout in checkbox handling
+- Improved error handling throughout the app
+
+📦 **Project Infrastructure:**
+- Added package.json with proper dependencies
+- Added MIT LICENSE
+- Improved .gitignore
+- Updated privacy policy with theme preference disclosure
+
 ## Features
 
 - **Slash commands** — type `/` to insert headings, lists, to-dos, quotes, dividers, toggle theme, or import/export files
+- **Enhanced markdown** — import/export with support for **bold**, *italic*, `code`, [links](url), and code blocks
 - **To-do lists** — interactive checkboxes with strikethrough on completion; Enter creates a new item, Ctrl/Cmd+Enter toggles the checkbox
-- **Markdown import & export** — open `.md` files (via slash command or drag-and-drop) and save your notes as `.md`
 - **Dark & light theme** — toggle via slash command; persists across sessions
 - **Auto-save** — content saves on every keystroke (debounced)
 - **Paste as plain text** — URLs are automatically converted to clickable links
 - **Offline-first** — service worker caches assets for offline use
 - **Installable PWA** — add to your home screen from the web app
+- **Security-hardened** — DOMPurify sanitization prevents XSS attacks
 - **Privacy-focused** — zero analytics, zero network requests, all data stays local
-- **Zero dependencies** — plain HTML/CSS/JS, loads instantly
+- **Lightweight** — minimal dependencies (only DOMPurify), loads instantly
 
 ## Install (Chrome extension)
 
@@ -92,6 +119,13 @@ To connect a custom domain, run `npx vercel domains add yourdomain.com` or confi
 ├── site.webmanifest    PWA manifest
 ├── vercel.json         Vercel routing & headers
 ├── privacy-policy.html Privacy policy page
+├── package.json        Dependencies and scripts
+├── LICENSE             MIT license
+├── src/                ES6 modules
+│   ├── core/          Core utilities (sanitization, storage)
+│   ├── config/        Constants and configuration
+│   └── utils/         Utility functions (markdown parser)
+├── vendor/             Third-party dependencies (DOMPurify)
 └── icons/              App icons (SVG + PNG)
 ```
 

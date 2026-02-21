@@ -1,0 +1,42 @@
+{
+  "name": "scratchly",
+  "version": "1.2.0",
+  "description": "Simply write notes and export as .md. No sign-up, no cloud.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "eslint src/ *.js",
+    "format": "prettier --write 'src/**/*.js' '*.js'",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "markdown",
+    "notes",
+    "scratchpad",
+    "editor",
+    "offline",
+    "privacy"
+  ],
+  "author": "Cedric Lee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cedlll/scratch-pad.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cedlll/scratch-pad/issues"
+  },
+  "homepage": "https://scratchly.xyz",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1",
+    "vitest": "^1.0.4",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.0.8"
+  }
+}

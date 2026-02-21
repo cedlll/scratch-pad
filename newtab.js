@@ -1,9 +1,15 @@
-(function () {
+(async function () {
   "use strict";
 
-  const STORAGE_KEY = "scratchpad_content";
-  const THEME_KEY = "scratchpad_theme";
-  const SAVE_DEBOUNCE_MS = 500;
+  // Import utilities
+  const { sanitizeHTML, sanitizeMarkdown } = await import('./src/core/sanitize.js');
+  const { STORAGE, TIMING } = await import('./src/config/constants.js');
+  const { parseMarkdownToHTML } = await import('./src/utils/markdown.js');
+  const { debounce } = await import('./src/utils/debounce.js');
+
+  const STORAGE_KEY = STORAGE.CONTENT_KEY;
+  const THEME_KEY = STORAGE.THEME_KEY;
+  const SAVE_DEBOUNCE_MS = TIMING.SAVE_DEBOUNCE_MS;
 
   const editor = document.getElementById("editor");
 
@@ -42,7 +48,8 @@
       applyTheme(result[THEME_KEY]);
     }
     if (result[STORAGE_KEY] != null) {
-      editor.innerHTML = result[STORAGE_KEY];
+      // SECURITY FIX: Sanitize HTML from storage to prevent XSS
+      editor.innerHTML = sanitizeHTML(result[STORAGE_KEY]);
       migrateTodoItems();
     }
     normalizeEmptyEditor();
@@ -321,16 +328,15 @@
     if (!checkbox) return;
     const item = checkbox.closest(".todo-item");
     if (!item) return;
-    setTimeout(() => {
-      if (checkbox.checked) {
-        checkbox.setAttribute("checked", "");
-        item.classList.add("checked");
-      } else {
-        checkbox.removeAttribute("checked");
-        item.classList.remove("checked");
-      }
-      scheduleSave();
-    }, 0);
+    // FIX: Removed unnecessary setTimeout - handle synchronously
+    if (checkbox.checked) {
+      checkbox.setAttribute("checked", "");
+      item.classList.add("checked");
+    } else {
+      checkbox.removeAttribute("checked");
+      item.classList.remove("checked");
+    }
+    scheduleSave();
   });
 
   editor.addEventListener("mousedown", (e) => {
@@ -354,7 +360,8 @@
   });
 
   // ── Keep cursor inside .todo-text ───────────────────
-  document.addEventListener("selectionchange", () => {
+  // PERFORMANCE: Debounce selectionchange to avoid excessive firing
+  const handleSelectionChange = debounce(() => {
     const sel = window.getSelection();
     if (!sel.rangeCount || !sel.isCollapsed) return;
 
@@ -376,7 +383,9 @@
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
-  });
+  }, TIMING.SELECTION_DEBOUNCE_MS);
+
+  document.addEventListener("selectionchange", handleSelectionChange);
 
   // ── Close slash menu on outside click ────────────────
   document.addEventListener("mousedown", (e) => {
@@ -484,22 +493,47 @@
 
     slashMenuOpen = true;
     activeIndex = 0;
-    menuPosition = { top: rect.bottom + 6, left: rect.left };
 
     renderMenu(getCommands());
     editor.setAttribute("aria-expanded", "true");
     editor.setAttribute("aria-controls", "slash-menu");
 
-    if (menuPosition.top + 340 > window.innerHeight) {
-      menuPosition.top = rect.top - 340 - 6;
-    }
-    if (menuPosition.left + 280 > window.innerWidth) {
-      menuPosition.left = window.innerWidth - 296;
+    // IMPROVED: Better positioning with actual menu dimensions
+    menuEl.style.display = "";
+    const menuRect = menuEl.getBoundingClientRect();
+    const menuHeight = menuRect.height || MENU.MAX_HEIGHT;
+    const menuWidth = menuRect.width || MENU.WIDTH;
+
+    let top = rect.bottom + MENU.OFFSET;
+    let left = rect.left;
+
+    // Vertical positioning with smart fallback
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow < menuHeight + MENU.VIEWPORT_PADDING) {
+      // Not enough space below
+      if (spaceAbove >= menuHeight || spaceAbove > spaceBelow) {
+        // Position above if there's more space or enough room
+        top = rect.top - menuHeight - MENU.OFFSET;
+      } else {
+        // Not enough space anywhere, align to viewport bottom
+        top = window.innerHeight - menuHeight - MENU.VIEWPORT_PADDING;
+      }
     }
 
-    menuEl.style.top = `${menuPosition.top}px`;
-    menuEl.style.left = `${menuPosition.left}px`;
-    menuEl.style.display = "";
+    // Horizontal positioning
+    if (left + menuWidth > window.innerWidth - MENU.VIEWPORT_PADDING) {
+      left = Math.max(MENU.VIEWPORT_PADDING, window.innerWidth - menuWidth - MENU.VIEWPORT_PADDING);
+    }
+
+    // Ensure menu stays within viewport
+    top = Math.max(MENU.VIEWPORT_PADDING, Math.min(top, window.innerHeight - menuHeight - MENU.VIEWPORT_PADDING));
+    left = Math.max(MENU.VIEWPORT_PADDING, left);
+
+    menuPosition = { top, left };
+    menuEl.style.top = `${top}px`;
+    menuEl.style.left = `${left}px`;
   }
 
   function closeSlashMenu() {
@@ -554,6 +588,15 @@
     const offset = sel.getRangeAt(0).startOffset;
     if (offset === 0) return;
     if (node.textContent[offset - 1] !== "/") return;
+
+    // FIX: Don't trigger slash menu inside links
+    const linkParent = node.parentElement?.closest?.('a[href]');
+    if (linkParent) return;
+
+    // FIX: Don't trigger if part of a URL (e.g., http://)
+    const text = node.textContent;
+    const beforeSlash = text.substring(Math.max(0, offset - 10), offset);
+    if (/https?:$/.test(beforeSlash) || /ftp:$/.test(beforeSlash)) return;
 
     if (offset >= 2) {
       const before = node.textContent[offset - 2];
@@ -660,14 +703,28 @@
       showToast("Nothing to export");
       return;
     }
+
+    // IMPROVED UX: Allow user to customize filename
+    const defaultName = `scratchpad-${formatDate()}`;
+    const filename = prompt('Export filename (without .md extension):', defaultName);
+
+    // User cancelled
+    if (filename === null) return;
+
+    // Sanitize filename
+    const sanitizedFilename = (filename.trim() || defaultName)
+      .replace(/[^a-z0-9_\-\.]/gi, '_')
+      .replace(/_{2,}/g, '_')
+      .substring(0, 255);
+
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `scratchpad-${formatDate()}.md`;
+    a.download = `${sanitizedFilename}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("Exported as .md");
+    showToast(`Exported as ${sanitizedFilename}.md`);
   }
 
   function formatDate() {
@@ -694,99 +751,29 @@
       if (editor.textContent.trim() && !confirm("Replace current content with " + file.name + "?")) {
         return;
       }
-      editor.innerHTML = parseMarkdownToHTML(md);
-      migrateTodoItems();
-      normalizeEmptyEditor();
-      updatePlaceholder();
-      scheduleSave();
-      showToast("Loaded " + file.name);
+      // SECURITY FIX: Sanitize markdown-converted HTML to prevent XSS
+      try {
+        const html = parseMarkdownToHTML(md);
+        editor.innerHTML = sanitizeMarkdown(html);
+        migrateTodoItems();
+        normalizeEmptyEditor();
+        updatePlaceholder();
+        scheduleSave();
+        showToast("Loaded " + file.name);
+      } catch (error) {
+        showToast("Failed to load " + file.name + ": " + error.message, true);
+        console.error('Import error:', error);
+      }
     };
-    reader.onerror = () => showToast("Failed to read file", true);
+    reader.onerror = (error) => {
+      showToast("Failed to read file: " + (error.message || 'Unknown error'), true);
+      console.error('File read error:', error);
+    };
     reader.readAsText(file);
   }
 
-  function escapeHtml(text) {
-    const el = document.createElement("span");
-    el.textContent = text;
-    return el.innerHTML;
-  }
-
-  function parseMarkdownToHTML(md) {
-    const lines = md.split("\n");
-    const parts = [];
-    let i = 0;
-
-    while (i < lines.length) {
-      const line = lines[i];
-
-      if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
-        parts.push("<hr>");
-        i++;
-        continue;
-      }
-
-      const h3 = line.match(/^### (.+)/);
-      if (h3) { parts.push(`<h3>${escapeHtml(h3[1])}</h3>`); i++; continue; }
-      const h2 = line.match(/^## (.+)/);
-      if (h2) { parts.push(`<h2>${escapeHtml(h2[1])}</h2>`); i++; continue; }
-      const h1 = line.match(/^# (.+)/);
-      if (h1) { parts.push(`<h1>${escapeHtml(h1[1])}</h1>`); i++; continue; }
-
-      const todo = line.match(/^[-*+] \[([ xX])\] (.*)/);
-      if (todo) {
-        const checked = todo[1] !== " ";
-        const text = todo[2] || "\u00A0";
-        parts.push(
-          `<div class="todo-item${checked ? " checked" : ""}">` +
-          `<input type="checkbox"${checked ? " checked" : ""} contenteditable="false" aria-label="Mark task complete">` +
-          `<span class="todo-text">${escapeHtml(text) || "\u00A0"}</span></div>`
-        );
-        i++;
-        continue;
-      }
-
-      if (/^[-*+] /.test(line)) {
-        const items = [];
-        while (i < lines.length && /^[-*+] /.test(lines[i])) {
-          items.push(lines[i].replace(/^[-*+] /, ""));
-          i++;
-        }
-        parts.push("<ul>" + items.map(t => `<li>${escapeHtml(t)}</li>`).join("") + "</ul>");
-        continue;
-      }
-
-      if (/^\d+[.)] /.test(line)) {
-        const items = [];
-        while (i < lines.length && /^\d+[.)] /.test(lines[i])) {
-          items.push(lines[i].replace(/^\d+[.)] /, ""));
-          i++;
-        }
-        parts.push("<ol>" + items.map(t => `<li>${escapeHtml(t)}</li>`).join("") + "</ol>");
-        continue;
-      }
-
-      if (/^>/.test(line)) {
-        const qLines = [];
-        while (i < lines.length && /^>/.test(lines[i])) {
-          qLines.push(lines[i].replace(/^> ?/, ""));
-          i++;
-        }
-        parts.push(`<blockquote>${qLines.map(l => escapeHtml(l)).join("<br>")}</blockquote>`);
-        continue;
-      }
-
-      if (!line.trim()) {
-        parts.push("<div><br></div>");
-        i++;
-        continue;
-      }
-
-      parts.push(`<div>${escapeHtml(line)}</div>`);
-      i++;
-    }
-
-    return parts.join("") || "<br>";
-  }
+  // parseMarkdownToHTML is now imported from src/utils/markdown.js
+  // (removed old implementation - enhanced version supports inline formatting like **bold**, *italic*, `code`, [links](url))
 
   // ── Drag & Drop .md files ──────────────────────────
   let dragCounter = 0;

@@ -1,1 +1,23 @@
 .vercel
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+coverage/
+.nyc_output/
+*.tgz
+.npm
+.eslintcache
+
+# Claude Code - local development files
+.claude/
+
+# Editor/IDE
+.cursor/

@@ -11,6 +11,8 @@
       document.documentElement.setAttribute("data-theme", "light");
     }
   </script>
+  <!-- DOMPurify for XSS prevention -->
+  <script src="vendor/dompurify.min.js"></script>
 </head>
 <body>
   <main>
@@ -38,6 +40,6 @@
       }};
     }
   </script>
-  <script src="newtab.js"></script>
+  <script type="module" src="newtab.js"></script>
 </body>
 </html>

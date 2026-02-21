@@ -1,0 +1,6 @@
+node_modules/
+dist/
+vendor/
+*.min.js
+.vercel/
+coverage/
