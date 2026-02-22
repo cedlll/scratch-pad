@@ -1,4 +1,4 @@
-const CACHE_NAME = "scratchpad-v2";
+const CACHE_NAME = "scratchpad-v3";
 const ASSETS = [
   "/",
   "/index.html",
@@ -9,6 +9,8 @@ const ASSETS = [
   "/vendor/dompurify.min.js",
   "/src/core/sanitize.js",
   "/src/config/constants.js",
+  "/src/utils/markdown.js",
+  "/src/utils/debounce.js",
   "/fonts/dm-sans-latin.woff2",
   "/fonts/dm-sans-latin-ext.woff2",
   "/icons/icon48.png",

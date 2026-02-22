@@ -4,6 +4,20 @@ A minimal scratchpad that lives in your browser. No sign-up, no cloud — everyt
 
 **Web app:** [scratchly.xyz](https://scratchly.xyz) · **Chrome extension:** [Chrome Web Store](https://chromewebstore.google.com/detail/pmjpljdhpohhlhekfkjlddaafhfodbdg)
 
+## What's New in v1.2.1
+
+🐛 **Critical Bug Fixes:**
+- Fixed service worker missing module assets (offline mode now fully functional)
+- Fixed Safari compatibility issue with markdown parser (now works on Safari < 16.4)
+- Added file size validation for drag-drop imports (10MB limit)
+- Fixed drag counter race condition for smoother drag-drop UX
+
+🔧 **Code Quality Improvements:**
+- Toast duration now uses centralized constant
+- Markdown parsing order optimized (inline code processed before links)
+- Added error handling to background.js tab creation
+- Added beforeunload save flush to prevent data loss on quick tab close
+
 ## What's New in v1.2.0
 
 🔒 **Security Enhancements:**

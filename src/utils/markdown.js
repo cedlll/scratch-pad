@@ -28,6 +28,9 @@ function escapeHtml(text) {
 function parseInline(text) {
   let html = escapeHtml(text);
 
+  // Process inline code FIRST (before links to avoid breaking code in links)
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
   // Links: [text](url)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -36,12 +39,19 @@ function parseInline(text) {
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
 
-  // Italic: *text* or _text_ (but not if part of bold)
-  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
-  html = html.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>');
-
-  // Inline code: `text`
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Italic: *text* or _text_ (Safari-compatible - no lookbehind)
+  html = html.replace(/\*([^*]+)\*/g, (match, p1, offset, string) => {
+    // Don't match if preceded or followed by another *
+    if (offset > 0 && string[offset - 1] === '*') return match;
+    if (offset + match.length < string.length && string[offset + match.length] === '*') return match;
+    return `<em>${p1}</em>`;
+  });
+  html = html.replace(/_([^_]+)_/g, (match, p1, offset, string) => {
+    // Don't match if preceded or followed by another _
+    if (offset > 0 && string[offset - 1] === '_') return match;
+    if (offset + match.length < string.length && string[offset + match.length] === '_') return match;
+    return `<em>${p1}</em>`;
+  });
 
   return html;
 }

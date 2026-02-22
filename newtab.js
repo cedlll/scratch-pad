@@ -165,6 +165,17 @@
     updatePlaceholder();
   }
 
+  // Flush pending saves before page unload to prevent data loss
+  window.addEventListener('beforeunload', () => {
+    if (editor && editor.innerHTML) {
+      try {
+        chrome.storage.local.set({ [STORAGE_KEY]: editor.innerHTML });
+      } catch (e) {
+        // Silent fail - user is leaving anyway
+      }
+    }
+  });
+
   // ── Keyboard handling ───────────────────────────────
   editor.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
@@ -785,7 +796,7 @@
   // (removed old implementation - enhanced version supports inline formatting like **bold**, *italic*, `code`, [links](url))
 
   // ── Drag & Drop .md files ──────────────────────────
-  let dragCounter = 0;
+  let isDragging = false;
   let dropOverlay = null;
 
   function showDropOverlay() {
@@ -805,14 +816,16 @@
   document.addEventListener("dragenter", (e) => {
     if (!e.dataTransfer.types.includes("Files")) return;
     e.preventDefault();
-    dragCounter++;
-    if (dragCounter === 1) showDropOverlay();
+    if (!isDragging) {
+      isDragging = true;
+      showDropOverlay();
+    }
   });
 
-  document.addEventListener("dragleave", () => {
-    dragCounter--;
-    if (dragCounter <= 0) {
-      dragCounter = 0;
+  document.addEventListener("dragleave", (e) => {
+    // Only hide if leaving the document entirely
+    if (e.relatedTarget === null || !document.contains(e.relatedTarget)) {
+      isDragging = false;
       hideDropOverlay();
     }
   });
@@ -825,10 +838,18 @@
 
   document.addEventListener("drop", (e) => {
     e.preventDefault();
-    dragCounter = 0;
+    isDragging = false;
     hideDropOverlay();
     const file = e.dataTransfer.files[0];
     if (!file) return;
+
+    // Check file size (10MB limit)
+    const MAX_SIZE = VALIDATION.MAX_FILE_SIZE_MB * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showToast(`File too large. Maximum size is ${VALIDATION.MAX_FILE_SIZE_MB}MB`, true);
+      return;
+    }
+
     if (!/\.(md|markdown)$/i.test(file.name)) {
       showToast("Only .md files are supported", true);
       return;
@@ -846,7 +867,7 @@
     toastEl.className = isError ? "toast error" : "toast";
     toastTimeout = setTimeout(() => {
       toastEl.classList.add("hidden");
-    }, 3000);
+    }, TIMING.TOAST_DURATION_MS);
   }
 
 })();
